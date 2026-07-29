@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "486640955397",
+    "project_id": "personal-fashion-9b000",
+    "storage_bucket": "personal-fashion-9b000.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:486640955397:android:848e3978030f5cefea2c6c",
+        "android_client_info": {
+          "package_name": "com.personal.fashion.personal_mobile"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "486640955397-eoa2la9nl4dhs1jiq7a85h7ocsm3j56s.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC7TiNTyEoOoSqqI8fWm_W3QokNoLhdXkU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "486640955397-eoa2la9nl4dhs1jiq7a85h7ocsm3j56s.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
