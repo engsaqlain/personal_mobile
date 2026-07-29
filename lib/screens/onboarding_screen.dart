@@ -11,7 +11,6 @@ class OnboardingScreen extends StatefulWidget {
   @override
   State<OnboardingScreen> createState() => _OnboardingScreenState();
 }
-
 class _OnboardingScreenState extends State<OnboardingScreen> {
   // Controls which page is currently visible and allows programmatic navigation
   final PageController _pageController = PageController();
@@ -100,11 +99,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // Placeholder icon until real images are added to assets
-                        Icon(
-                          Icons.checkroom,
-                          size: 120,
-                          color: AppColors.roseGold,
+                        // Slide image - uses asset path from model
+                        Image.asset(
+                          slide.imagePath,
+                          height: 220,
+                          fit: BoxFit.contain,
                         ),
                         const SizedBox(height: 32),
                         Text(
