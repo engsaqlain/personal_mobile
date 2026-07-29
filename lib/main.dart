@@ -1,7 +1,13 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:personal_mobile/screens/splash_screen.dart';
 
-void main() {
+void main() async{
+  // Required before calling any Firebase function
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Connects the app to our Firebase project using google-services.json
+  await Firebase.initializeApp();
   runApp(const MyApp());
 }
 
