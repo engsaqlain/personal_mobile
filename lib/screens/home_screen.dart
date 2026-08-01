@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:personal_mobile/screens/product_detail_screen.dart';
+import 'package:personal_mobile/screens/search_screen.dart';
+import 'package:provider/provider.dart';
 
+import '../providers/cart_provider.dart';
 import '../utils/app_colors.dart';
 import '../models/product_model.dart';
+import '../widgets/common/product_image.dart';
+import 'cart_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -59,13 +65,48 @@ class _HomeScreenState extends State<HomeScreen> {
               IconButton(
                 icon: const Icon(Icons.search, color: AppColors.elegantBlack),
                 onPressed: () {
-                  // TODO: Navigate to search screen/functionality
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => SearchScreen(),));
                 },
               ),
-              IconButton(
-                icon: const Icon(Icons.shopping_bag_outlined, color: AppColors.elegantBlack),
-                onPressed: () {
-                  // TODO: Navigate to CartScreen once it is built
+              // Cart icon with a badge showing item count.
+// Consumer rebuilds only this widget when CartProvider changes
+              Consumer<CartProvider>(
+                builder: (context, cartProvider, child) {
+                  return Stack(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.shopping_bag_outlined, color: AppColors.elegantBlack),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const CartScreen()),
+                          );
+                        },
+                      ),
+                      if (cartProvider.itemCount > 0)
+                        Positioned(
+                          right: 6,
+                          top: 6,
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: const BoxDecoration(
+                              color: AppColors.goldAccent,
+                              shape: BoxShape.circle,
+                            ),
+                            constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                            child: Text(
+                              '${cartProvider.itemCount}',
+                              style: const TextStyle(
+                                color: AppColors.elegantBlack,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                    ],
+                  );
                 },
               ),
             ],
@@ -88,7 +129,9 @@ class _HomeScreenState extends State<HomeScreen> {
             end: Alignment.bottomRight,
             colors: [AppColors.roseGold, AppColors.softGray],
           ),
-          borderRadius: BorderRadius.circular(16), // Product card radius per Section 7.3
+          borderRadius: BorderRadius.circular(
+            16,
+          ), // Product card radius per Section 7.3
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -104,10 +147,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 6),
             Text(
               'Be a part of the fashion revolution',
-              style: GoogleFonts.inter(
-                fontSize: 13,
-                color: AppColors.darkGray,
-              ),
+              style: GoogleFonts.inter(fontSize: 13, color: AppColors.darkGray),
             ),
           ],
         ),
@@ -137,11 +177,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 });
               },
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   // Selected chip filled black, others outlined -
                   // matches Section 7.3 Category Button spec
-                  color: isSelected ? AppColors.elegantBlack : Colors.transparent,
+                  color: isSelected
+                      ? AppColors.elegantBlack
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(40),
                   border: Border.all(color: AppColors.elegantBlack, width: 1.5),
                 ),
@@ -151,7 +196,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     style: GoogleFonts.inter(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
-                      color: isSelected ? AppColors.white : AppColors.elegantBlack,
+                      color: isSelected
+                          ? AppColors.white
+                          : AppColors.elegantBlack,
                     ),
                   ),
                 ),
@@ -187,7 +234,8 @@ class _HomeScreenState extends State<HomeScreen> {
             physics: const NeverScrollableScrollPhysics(),
             itemCount: DummyData.bestSellerProducts.length,
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2, // 2 products per row, matching reference design
+              crossAxisCount:
+                  2, // 2 products per row, matching reference design
               mainAxisSpacing: 16,
               crossAxisSpacing: 16,
               childAspectRatio: 0.7, // Controls card height relative to width
@@ -207,11 +255,19 @@ class _HomeScreenState extends State<HomeScreen> {
     return GestureDetector(
       onTap: () {
         // TODO: Navigate to ProductDetailScreen, passing this product
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ProductDetailScreen(product: product),
+          ),
+        );
       },
       child: Container(
         decoration: BoxDecoration(
           color: AppColors.softGray,
-          borderRadius: BorderRadius.circular(16), // Section 7.3 Product Card spec
+          borderRadius: BorderRadius.circular(
+            16,
+          ), // Section 7.3 Product Card spec
         ),
         padding: const EdgeInsets.all(12),
         child: Column(
@@ -220,12 +276,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Expanded(
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: Image.asset(
-                  // Using the first image in the array (real data may have multiple)
-                  product.images.first,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                ),
+                child: ProductImage(images: product.images, fit: BoxFit.cover),
               ),
             ),
             const SizedBox(height: 10),
