@@ -1,6 +1,10 @@
-import '../models/product_model.dart';
 // Represents a single product, matching the Firestore "products" collection
-// schema defined in Section 5.1 of the project documentation
+// schema defined in Section 5.1 of the project documentation.
+//
+// Includes defensive parsing (_parseDouble, _parseStringList) so the app
+// doesn't crash if any team member's Firestore data has inconsistent
+// types (e.g. a price stored as a String instead of a number, or an
+// images field stored as a single String instead of an array).
 class ProductModel {
   final String productId;
   final String name;
@@ -37,101 +41,73 @@ class ProductModel {
   });
 
   // Converts Firestore document data (a Map) into a ProductModel object.
-  // This will be used later when we fetch real data from Firestore.
   factory ProductModel.fromMap(Map<String, dynamic> map, String id) {
     return ProductModel(
       productId: id,
       name: map['name'] ?? '',
       description: map['description'] ?? '',
-      price: (map['price'] ?? 0).toDouble(),
-      oldPrice: (map['oldPrice'] ?? 0).toDouble(),
+      price: _parseDouble(map['price']),
+      oldPrice: _parseDouble(map['oldPrice']),
       category: map['category'] ?? '',
       collection: map['collection'] ?? '',
-      images: List<String>.from(map['images'] ?? []),
-      sizes: List<String>.from(map['sizes'] ?? []),
-      colors: List<String>.from(map['colors'] ?? []),
-      stock: map['stock'] ?? 0,
+      images: _parseStringList(map['images']),
+      sizes: _parseStringList(map['sizes']),
+      colors: _parseStringList(map['colors']),
+      stock: _parseInt(map['stock']),
       isBestSeller: map['isBestSeller'] ?? false,
       isAvailable: map['isAvailable'] ?? true,
-      averageRating: (map['averageRating'] ?? 0).toDouble(),
+      averageRating: _parseDouble(map['averageRating']),
       createdAt: map['createdAt']?.toDate(),
     );
   }
-}
-class DummyData {
-  static List<ProductModel> bestSellerProducts = [
-    ProductModel(
-      productId: '1',
-      name: 'Oversized Pink Hoodie',
-      description: 'A cozy oversized hoodie perfect for everyday wear.',
-      price: 45.99,
-      oldPrice: 59.99,
-      category: 'hoodies',
-      collection: '2025',
-      images: ['assets/images/onboarding1.png'],
-      sizes: ['S', 'M', 'L', 'XL'],
-      colors: ['Pink', 'Black'],
-      stock: 20,
-      isBestSeller: true,
-      isAvailable: true,
-      averageRating: 4.5,
-    ),
-    ProductModel(
-      productId: '2',
-      name: 'Classic White Shirt',
-      description: 'A timeless white shirt for any occasion.',
-      price: 29.99,
-      oldPrice: 0,
-      category: 'shirts',
-      collection: '2024',
-      images: ['assets/images/onboarding2.png'],
-      sizes: ['S', 'M', 'L'],
-      colors: ['White'],
-      stock: 15,
-      isBestSeller: true,
-      isAvailable: true,
-      averageRating: 4.2,
-    ),
-    ProductModel(
-      productId: '3',
-      name: 'Slim Fit Trousers',
-      description: 'Comfortable slim fit trousers.',
-      price: 39.99,
-      oldPrice: 49.99,
-      category: 'trousers',
-      collection: '2025',
-      images: ['assets/images/onboarding3.png'],
-      sizes: ['M', 'L', 'XL'],
-      colors: ['Beige', 'Grey'],
-      stock: 10,
-      isBestSeller: true,
-      isAvailable: true,
-      averageRating: 4.0,
-    ),
-    ProductModel(
-      productId: '4',
-      name: 'Casual Cap',
-      description: 'A stylish casual cap.',
-      price: 15.99,
-      oldPrice: 0,
-      category: 'cap',
-      collection: '2023',
-      images: ['assets/images/onboarding1.png'],
-      sizes: ['One Size'],
-      colors: ['Black', 'White'],
-      stock: 25,
-      isBestSeller: true,
-      isAvailable: true,
-      averageRating: 4.7,
-    ),
-  ];
 
-  static List<String> categories = [
-    'All',
-    'Hoodies',
-    'Shirts',
-    'Trousers',
-    'Pants',
-    'Cap',
-  ];
+  // Converts this ProductModel back into a Map, useful if we ever need
+  // to write/update product data from the app (e.g. Admin features later).
+  Map<String, dynamic> toMap() {
+    return {
+      'name': name,
+      'description': description,
+      'price': price,
+      'oldPrice': oldPrice,
+      'category': category,
+      'collection': collection,
+      'images': images,
+      'sizes': sizes,
+      'colors': colors,
+      'stock': stock,
+      'isBestSeller': isBestSeller,
+      'isAvailable': isAvailable,
+      'averageRating': averageRating,
+    };
+  }
+
+  // --- Defensive parsing helpers ---
+
+  // Safely converts a value to double, whether it comes from Firestore
+  // as a String (e.g. "180"), an int, or a double.
+  static double _parseDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is String) return double.tryParse(value) ?? 0.0;
+    if (value is num) return value.toDouble();
+    return 0.0;
+  }
+
+  // Safely converts a value to int, in case stock is ever stored as a String
+  static int _parseInt(dynamic value) {
+    if (value == null) return 0;
+    if (value is String) return int.tryParse(value) ?? 0;
+    if (value is num) return value.toInt();
+    return 0;
+  }
+
+  // Safely converts a value to List<String>, whether Firestore has it as
+  // a proper array, a single String, or missing entirely.
+  static List<String> _parseStringList(dynamic value) {
+    if (value == null) return [];
+    if (value is List) {
+      return List<String>.from(value.map((e) => e.toString()));
+    }
+    if (value is String) return [value]; // Wrap single string in a list
+    return [];
+  }
 }

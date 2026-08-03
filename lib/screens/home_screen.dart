@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:personal_mobile/screens/product_detail_screen.dart';
-import 'package:personal_mobile/screens/search_screen.dart';
 import 'package:provider/provider.dart';
 
-import '../providers/cart_provider.dart';
 import '../utils/app_colors.dart';
+import '../utils/dummy_data.dart';
 import '../models/product_model.dart';
+import '../providers/cart_provider.dart';
+import '../services/product_service.dart';
 import '../widgets/common/product_image.dart';
 import 'cart_screen.dart';
+import 'search_screen.dart';
+import 'product_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -21,14 +23,15 @@ class _HomeScreenState extends State<HomeScreen> {
   // Tracks which category chip is currently selected
   String _selectedCategory = 'All';
 
+  // Handles all Firestore reads for products
+  final ProductService _productService = ProductService();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.white,
       body: SafeArea(
         child: ListView(
-          // Single vertical scroll for the whole screen -
-          // header, banner, categories, and grid all scroll together
           padding: const EdgeInsets.symmetric(vertical: 16),
           children: [
             _buildHeader(),
@@ -65,11 +68,14 @@ class _HomeScreenState extends State<HomeScreen> {
               IconButton(
                 icon: const Icon(Icons.search, color: AppColors.elegantBlack),
                 onPressed: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => SearchScreen(),));
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const SearchScreen()),
+                  );
                 },
               ),
-              // Cart icon with a badge showing item count.
-// Consumer rebuilds only this widget when CartProvider changes
+              // Cart icon with a live badge showing item count.
+              // Consumer rebuilds only this widget when CartProvider changes.
               Consumer<CartProvider>(
                 builder: (context, cartProvider, child) {
                   return Stack(
@@ -116,7 +122,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Hero/promo banner - matches the "Fashionable Every Day" style from the brand design
+  // Hero/promo banner
   Widget _buildBanner() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -129,9 +135,7 @@ class _HomeScreenState extends State<HomeScreen> {
             end: Alignment.bottomRight,
             colors: [AppColors.roseGold, AppColors.softGray],
           ),
-          borderRadius: BorderRadius.circular(
-            16,
-          ), // Product card radius per Section 7.3
+          borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -147,7 +151,10 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 6),
             Text(
               'Be a part of the fashion revolution',
-              style: GoogleFonts.inter(fontSize: 13, color: AppColors.darkGray),
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                color: AppColors.darkGray,
+              ),
             ),
           ],
         ),
@@ -171,22 +178,14 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.only(right: 10),
             child: GestureDetector(
               onTap: () {
-                // Update selected category and rebuild UI to reflect it
                 setState(() {
                   _selectedCategory = category;
                 });
               },
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 8,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                 decoration: BoxDecoration(
-                  // Selected chip filled black, others outlined -
-                  // matches Section 7.3 Category Button spec
-                  color: isSelected
-                      ? AppColors.elegantBlack
-                      : Colors.transparent,
+                  color: isSelected ? AppColors.elegantBlack : Colors.transparent,
                   borderRadius: BorderRadius.circular(40),
                   border: Border.all(color: AppColors.elegantBlack, width: 1.5),
                 ),
@@ -196,9 +195,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     style: GoogleFonts.inter(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
-                      color: isSelected
-                          ? AppColors.white
-                          : AppColors.elegantBlack,
+                      color: isSelected ? AppColors.white : AppColors.elegantBlack,
                     ),
                   ),
                 ),
@@ -210,7 +207,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // "Best Sellers" heading + product grid
+  // "Best Sellers" heading + real-time product grid from Firestore
   Widget _buildBestSellersSection() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -226,23 +223,65 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          GridView.builder(
-            // Grid is inside a ListView, so it must not scroll on its own -
-            // shrinkWrap + NeverScrollableScrollPhysics let the outer
-            // ListView handle all scrolling instead
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: DummyData.bestSellerProducts.length,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount:
-                  2, // 2 products per row, matching reference design
-              mainAxisSpacing: 16,
-              crossAxisSpacing: 16,
-              childAspectRatio: 0.7, // Controls card height relative to width
-            ),
-            itemBuilder: (context, index) {
-              final product = DummyData.bestSellerProducts[index];
-              return _buildProductCard(product);
+
+          // StreamBuilder listens to Firestore in real-time and rebuilds
+          // this widget whenever the products collection changes
+          StreamBuilder<List<ProductModel>>(
+            stream: _productService.getBestSellers(),
+            builder: (context, snapshot) {
+              // Still waiting for the first batch of data from Firestore
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(32),
+                    child: CircularProgressIndicator(),
+                  ),
+                );
+              }
+
+              // Something went wrong fetching data
+              if (snapshot.hasError) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Text(
+                      'Could not load products.\n${snapshot.error}',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.inter(fontSize: 12, color: AppColors.darkGray),
+                    ),
+                  ),
+                );
+              }
+
+              final products = snapshot.data ?? [];
+
+              // No best sellers found in Firestore yet
+              if (products.isEmpty) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Text(
+                      'No products available yet',
+                      style: GoogleFonts.inter(color: AppColors.darkGray),
+                    ),
+                  ),
+                );
+              }
+
+              return GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: products.length,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 16,
+                  crossAxisSpacing: 16,
+                  childAspectRatio: 0.7,
+                ),
+                itemBuilder: (context, index) {
+                  return _buildProductCard(products[index]);
+                },
+              );
             },
           ),
         ],
@@ -254,20 +293,15 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildProductCard(ProductModel product) {
     return GestureDetector(
       onTap: () {
-        // TODO: Navigate to ProductDetailScreen, passing this product
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => ProductDetailScreen(product: product),
-          ),
+          MaterialPageRoute(builder: (context) => ProductDetailScreen(product: product)),
         );
       },
       child: Container(
         decoration: BoxDecoration(
           color: AppColors.softGray,
-          borderRadius: BorderRadius.circular(
-            16,
-          ), // Section 7.3 Product Card spec
+          borderRadius: BorderRadius.circular(16),
         ),
         padding: const EdgeInsets.all(12),
         child: Column(
@@ -301,7 +335,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     color: AppColors.goldAccent,
                   ),
                 ),
-                // Only show old price (strikethrough) if there's an actual discount
                 if (product.oldPrice > 0) ...[
                   const SizedBox(width: 6),
                   Text(

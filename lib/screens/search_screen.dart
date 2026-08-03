@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../utils/app_colors.dart';
 import '../models/product_model.dart';
+import '../services/product_service.dart';
 import '../widgets/common/product_image.dart';
 import 'product_detail_screen.dart';
 
@@ -15,9 +16,36 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
+  final ProductService _productService = ProductService();
 
-  // Holds the currently filtered results. Starts empty until user types.
+  // Holds ALL products fetched once from Firestore when this screen opens
+  List<ProductModel> _allProducts = [];
+
+  // Holds the currently filtered results based on search text
   List<ProductModel> _filteredProducts = [];
+
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProducts();
+  }
+
+  // Fetches all products from Firestore once when the screen opens.
+  // We take the first value from the stream since search doesn't need
+  // to stay live-updated while the user is typing.
+  void _loadProducts() async {
+    try {
+      final products = await _productService.getProducts().first;
+      setState(() {
+        _allProducts = products;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -25,19 +53,14 @@ class _SearchScreenState extends State<SearchScreen> {
     super.dispose();
   }
 
-  // Runs on every keystroke - filters the product list by name
+  // Runs on every keystroke - filters the already-loaded product list by name
   void _onSearchChanged(String query) {
-    // TODO: Once real Firestore data is connected, replace
-    // DummyData.bestSellerProducts with the full products list.
-    final allProducts = DummyData.bestSellerProducts;
-
     if (query.trim().isEmpty) {
       setState(() => _filteredProducts = []);
       return;
     }
 
-    final results = allProducts.where((product) {
-      // Case-insensitive match against the product name
+    final results = _allProducts.where((product) {
       return product.name.toLowerCase().contains(query.toLowerCase());
     }).toList();
 
@@ -51,7 +74,6 @@ class _SearchScreenState extends State<SearchScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Search bar with back button
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Row(
@@ -63,7 +85,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   Expanded(
                     child: TextField(
                       controller: _searchController,
-                      autofocus: true, // Keyboard opens immediately on screen entry
+                      autofocus: true,
                       onChanged: _onSearchChanged,
                       style: GoogleFonts.inter(fontSize: 14),
                       decoration: InputDecoration(
@@ -72,7 +94,6 @@ class _SearchScreenState extends State<SearchScreen> {
                         filled: true,
                         fillColor: AppColors.softGray,
                         prefixIcon: const Icon(Icons.search, color: AppColors.darkGray),
-                        // Clear button appears once user has typed something
                         suffixIcon: _searchController.text.isNotEmpty
                             ? IconButton(
                           icon: const Icon(Icons.close, color: AppColors.darkGray),
@@ -93,8 +114,6 @@ class _SearchScreenState extends State<SearchScreen> {
                 ],
               ),
             ),
-
-            // Results area
             Expanded(child: _buildResultsArea()),
           ],
         ),
@@ -103,7 +122,11 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildResultsArea() {
-    // Nothing typed yet - show a neutral prompt
+    // Still loading the initial product list from Firestore
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
     if (_searchController.text.trim().isEmpty) {
       return Center(
         child: Text(
@@ -113,7 +136,6 @@ class _SearchScreenState extends State<SearchScreen> {
       );
     }
 
-    // Typed something, but no matches found
     if (_filteredProducts.isEmpty) {
       return Center(
         child: Column(
@@ -130,7 +152,6 @@ class _SearchScreenState extends State<SearchScreen> {
       );
     }
 
-    // Show matching results as a list
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       itemCount: _filteredProducts.length,
