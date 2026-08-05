@@ -254,6 +254,7 @@ class _HomeScreenState extends State<HomeScreen> {
               }
 
               final products = snapshot.data ?? [];
+              print('Fetched products count: ${products.length}'); // Debug line
 
               // No best sellers found in Firestore yet
               if (products.isEmpty) {
