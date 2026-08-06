@@ -70,7 +70,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const SearchScreen()),
+                    MaterialPageRoute(
+                      builder: (context) => const SearchScreen(),
+                    ),
                   );
                 },
               ),
@@ -81,11 +83,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   return Stack(
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.shopping_bag_outlined, color: AppColors.elegantBlack),
+                        icon: const Icon(
+                          Icons.shopping_bag_outlined,
+                          color: AppColors.elegantBlack,
+                        ),
                         onPressed: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => const CartScreen()),
+                            MaterialPageRoute(
+                              builder: (context) => const CartScreen(),
+                            ),
                           );
                         },
                       ),
@@ -99,7 +106,10 @@ class _HomeScreenState extends State<HomeScreen> {
                               color: AppColors.goldAccent,
                               shape: BoxShape.circle,
                             ),
-                            constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                            constraints: const BoxConstraints(
+                              minWidth: 18,
+                              minHeight: 18,
+                            ),
                             child: Text(
                               '${cartProvider.itemCount}',
                               style: const TextStyle(
@@ -151,10 +161,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 6),
             Text(
               'Be a part of the fashion revolution',
-              style: GoogleFonts.inter(
-                fontSize: 13,
-                color: AppColors.darkGray,
-              ),
+              style: GoogleFonts.inter(fontSize: 13, color: AppColors.darkGray),
             ),
           ],
         ),
@@ -183,9 +190,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 });
               },
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
-                  color: isSelected ? AppColors.elegantBlack : Colors.transparent,
+                  color: isSelected
+                      ? AppColors.elegantBlack
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(40),
                   border: Border.all(color: AppColors.elegantBlack, width: 1.5),
                 ),
@@ -195,7 +207,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     style: GoogleFonts.inter(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
-                      color: isSelected ? AppColors.white : AppColors.elegantBlack,
+                      color: isSelected
+                          ? AppColors.white
+                          : AppColors.elegantBlack,
                     ),
                   ),
                 ),
@@ -207,7 +221,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // "Best Sellers" heading + real-time product grid from Firestore
+  // "Best Sellers" heading + real-time product grid from Firestore,
+  // filtered client-side by the selected category
   Widget _buildBestSellersSection() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -227,7 +242,7 @@ class _HomeScreenState extends State<HomeScreen> {
           // StreamBuilder listens to Firestore in real-time and rebuilds
           // this widget whenever the products collection changes
           StreamBuilder<List<ProductModel>>(
-            stream: _productService.getBestSellers(),
+            stream: _productService.getProducts(),
             builder: (context, snapshot) {
               // Still waiting for the first batch of data from Firestore
               if (snapshot.connectionState == ConnectionState.waiting) {
@@ -247,22 +262,37 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Text(
                       'Could not load products.\n${snapshot.error}',
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(fontSize: 12, color: AppColors.darkGray),
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: AppColors.darkGray,
+                      ),
                     ),
                   ),
                 );
               }
 
-              final products = snapshot.data ?? [];
-              print('Fetched products count: ${products.length}'); // Debug line
+              final allProducts = snapshot.data ?? [];
+              for (var p in allProducts) {
+                print('Product: ${p.name} | Category: "${p.category}"');
+              }
 
-              // No best sellers found in Firestore yet
+              // Filter by selected category. "All" shows everything;
+              // comparison is case-insensitive since Firestore data and
+              // chip labels might differ in casing.
+              final products = _selectedCategory == 'All'
+                  ? allProducts
+                  : allProducts
+                  .where((product) =>
+              product.category.trim().toLowerCase() ==
+                  _selectedCategory.trim().toLowerCase())
+                  .toList();
+
               if (products.isEmpty) {
                 return Center(
                   child: Padding(
                     padding: const EdgeInsets.all(24),
                     child: Text(
-                      'No products available yet',
+                      'No products found in this category',
                       style: GoogleFonts.inter(color: AppColors.darkGray),
                     ),
                   ),
@@ -296,7 +326,9 @@ class _HomeScreenState extends State<HomeScreen> {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => ProductDetailScreen(product: product)),
+          MaterialPageRoute(
+            builder: (context) => ProductDetailScreen(product: product),
+          ),
         );
       },
       child: Container(

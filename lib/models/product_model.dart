@@ -102,12 +102,20 @@ class ProductModel {
 
   // Safely converts a value to List<String>, whether Firestore has it as
   // a proper array, a single String, or missing entirely.
+  // Safely converts a value to List<String>, whether Firestore has it as
+// a proper array, a single String, a comma-separated String
+// (e.g. "S,M,L"), or missing entirely.
   static List<String> _parseStringList(dynamic value) {
     if (value == null) return [];
     if (value is List) {
       return List<String>.from(value.map((e) => e.toString()));
     }
-    if (value is String) return [value]; // Wrap single string in a list
+    if (value is String) {
+      if (value.trim().isEmpty) return [];
+      // Handle comma-separated strings like "S,M,L" by splitting them,
+      // and trim whitespace around each item
+      return value.split(',').map((e) => e.trim()).toList();
+    }
     return [];
   }
 }
