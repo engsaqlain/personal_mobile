@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-
 import '../utils/app_colors.dart';
 import '../models/product_model.dart';
 import '../services/product_service.dart';
@@ -9,11 +8,9 @@ import 'product_detail_screen.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
-
   @override
   State<SearchScreen> createState() => _SearchScreenState();
 }
-
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   final ProductService _productService = ProductService();

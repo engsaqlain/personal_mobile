@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:personal_mobile/screens/profile_screen.dart';
 import 'package:provider/provider.dart';
 
+import '../services/notification_service.dart';
 import '../utils/app_colors.dart';
 import '../utils/dummy_data.dart';
 import '../models/product_model.dart';
@@ -25,6 +27,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Handles all Firestore reads for products
   final ProductService _productService = ProductService();
+  @override
+  void initState() {
+    super.initState();
+    NotificationService().initialize();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -122,6 +129,15 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                     ],
+                  );
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.person_outline, color: AppColors.elegantBlack),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const ProfileScreen()),
                   );
                 },
               ),

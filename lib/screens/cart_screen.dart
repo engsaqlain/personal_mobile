@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../providers/cart_provider.dart';
 import '../utils/app_colors.dart';
 import '../widgets/common/product_image.dart';
+import 'checkout_screen.dart';
 
 class CartScreen extends StatelessWidget {
   const CartScreen({super.key});
@@ -162,7 +163,11 @@ class CartScreen extends StatelessWidget {
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                         ),
                         onPressed: () {
-                          // TODO: Navigate to CheckoutScreen once it is built
+
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const CheckoutScreen()),
+                      );
                         },
                         child: Text('Proceed to Checkout',
                             style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),

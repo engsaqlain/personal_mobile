@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/cart_provider.dart';
+import '../services/wishlist_service.dart';
 import '../utils/app_colors.dart';
 import '../models/product_model.dart';
 import '../widgets/common/product_image.dart';
@@ -17,10 +18,24 @@ class ProductDetailScreen extends StatefulWidget {
 }
 
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
+  final WishlistService _wishlistService = WishlistService();
+  bool _isWishlisted = false;
+
   String? _selectedSize;
   String? _selectedColor;
   int _quantity = 1;
+  @override
+  void initState() {
+    super.initState();
+    _checkWishlistStatus();
+  }
 
+  void _checkWishlistStatus() async {
+    final ids = await _wishlistService.getWishlistProductIds().first;
+    if (mounted) {
+      setState(() => _isWishlisted = ids.contains(widget.product.productId));
+    }
+  }
   @override
   Widget build(BuildContext context) {
     final product = widget.product;
@@ -41,9 +56,17 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     onPressed: () => Navigator.pop(context),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.favorite_border, color: AppColors.elegantBlack),
-                    onPressed: () {
-                      // TODO: Add to wishlist via Firestore
+                    icon: Icon(
+                      _isWishlisted ? Icons.favorite : Icons.favorite_border,
+                      color: _isWishlisted ? Colors.red : AppColors.elegantBlack,
+                    ),
+                    onPressed: () async {
+                      if (_isWishlisted) {
+                        await _wishlistService.removeFromWishlist(product.productId);
+                      } else {
+                        await _wishlistService.addToWishlist(product.productId);
+                      }
+                      setState(() => _isWishlisted = !_isWishlisted);
                     },
                   ),
                 ],
